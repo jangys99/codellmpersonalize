@@ -1,0 +1,115 @@
+{
+    "kitchen 0": {
+        "receptacle": [
+            "kitchen 0 bottom cabinet 35",
+            "kitchen 0 counter 40",
+            "kitchen 0 dishwasher 36",
+            "kitchen 0 sink 37",
+            "kitchen 0 top cabinet 42",
+            "kitchen 0 bottom cabinet 44",
+            "kitchen 0 counter 49",
+            "kitchen 0 counter 48",
+            "kitchen 0 carpet 34",
+            "kitchen 0 cooktop 64",
+            "kitchen 0 oven 46",
+            "kitchen 0 chair 12",
+            "kitchen 0 chair 8",
+            "kitchen 0 plant 5",
+            "kitchen 0 table 6",
+            "kitchen 0 bottom cabinet 47",
+            "kitchen 0 chair 7",
+            "kitchen 0 bottom cabinet 32",
+            "kitchen 0 counter 33",
+            "kitchen 0 fridge 20",
+            "kitchen 0 bottom cabinet 38",
+            "kitchen 0 bottom cabinet 29",
+            "kitchen 0 bottom cabinet 30",
+            "kitchen 0 counter 31",
+            "kitchen 0 counter 41",
+            "kitchen 0 oven 21",
+            "kitchen 0 oven 22",
+            "kitchen 0 top cabinet 24",
+            "kitchen 0 top cabinet 25",
+            "kitchen 0 top cabinet 27",
+            "kitchen 0 bottom cabinet 26",
+            "kitchen 0 microwave 23",
+            "kitchen 0 chair 9",
+            "kitchen 0 bottom cabinet 39",
+            "kitchen 0 top cabinet 43",
+            "kitchen 0 chair 10",
+            "kitchen 0 chair 11"
+        ],
+        "object": {
+            "cracker box 1": {
+                "receptacle": "kitchen 0 carpet 34"
+            },
+            "pan 1": {
+                "receptacle": "kitchen 0 table 6"
+            },
+            "xylitol sweetener 1": {
+                "receptacle": "kitchen 0 table 6"
+            }
+        }
+    },
+    "utility room 0": {
+        "receptacle": [
+            "utility room 0 dryer 57",
+            "utility room 0 washer 56",
+            "utility room 0 sink 58",
+            "utility room 0 bottom cabinet 59",
+            "utility room 0 top cabinet 60"
+        ],
+        "object": {}
+    },
+    "pantry room 0": {
+        "receptacle": [
+            "pantry room 0 counter 53",
+            "pantry room 0 bottom cabinet 51",
+            "pantry room 0 bottom cabinet 52",
+            "pantry room 0 fridge 50",
+            "pantry room 0 top cabinet 54",
+            "pantry room 0 top cabinet 55"
+        ],
+        "object": {
+            "chocolate box 1": {
+                "receptacle": "pantry room 0 counter 53"
+            },
+            "surface saver ring 1": {
+                "receptacle": "pantry room 0 top cabinet 54"
+            },
+            "saucer 1": {
+                "receptacle": "pantry room 0 top cabinet 54"
+            }
+        }
+    },
+    "corridor 0": {
+        "receptacle": [
+            "corridor 0 carpet 13",
+            "corridor 0 shelf 14",
+            "corridor 0 table 0"
+        ],
+        "object": {}
+    },
+    "living room 0": { 
+        "receptacle": [
+            "living room 0 chair 1",
+            "living room 0 shelf 16",
+            "living room 0 shelf 15",
+            "living room 0 chair 2",
+            "living room 0 coffee table 4",
+            "living room 0 coffee table 3"
+        ],
+        "object": {}
+    },
+    "bathroom 0": {
+        "receptacle": [
+            "bathroom 0 mirror 63",
+            "bathroom 0 sink 62"
+        ],
+        "object": {
+            "blender jar 1": {
+                "receptacle": "bathroom 0 toilet 61"
+            }
+        }
+    }
+}

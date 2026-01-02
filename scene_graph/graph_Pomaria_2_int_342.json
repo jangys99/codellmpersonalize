@@ -1,0 +1,53 @@
+{
+    "bathroom 0": {
+        "receptacle": [
+            "bathroom 0 bathtub 14",
+            "bathroom 0 table 7",
+            "bathroom 0 carpet 15",
+            "bathroom 0 mirror 23",
+            "bathroom 0 sink 19",
+            "bathroom 0 bottom cabinet 20",
+            "bathroom 0 sink 18",
+            "bathroom 0 mirror 22",
+            "bathroom 0 bottom cabinet 16",
+            "bathroom 0 table 8"
+        ],
+        "object": {
+            "picture frame 1": {
+                "receptacle": "bathroom 0 table 7"
+            }
+        }
+    },
+    "bedroom 0": {
+        "receptacle": [
+            "bedroom 0 carpet 12",
+            "bedroom 0 shelf 9",
+            "bedroom 0 sofa chair 2",
+            "bedroom 0 chair 1",
+            "bedroom 0 bottom cabinet 10",
+            "bedroom 0 bed 11",
+            "bedroom 0 shelf 13",
+            "bedroom 0 standing tv 3"
+        ],
+        "object": {
+            "table lamp 1": {
+                "receptacle": "bedroom 0 bed 11"
+            },
+            "plant 1": {
+                "receptacle": "bedroom 0 shelf 13"
+            },
+            "candle holder 1": {
+                "receptacle": "bedroom 0 shelf 13"
+            },
+            "shoe 1": {
+                "receptacle": "bedroom 0 chair 1"
+            }
+        }
+    },
+    "corridor 0": {
+        "receptacle": [
+            "corridor 0 plant 0"
+        ],
+        "object": {}
+    }
+}

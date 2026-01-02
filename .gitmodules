@@ -1,0 +1,4 @@
+[submodule "astar_pycpp"]
+	path = cos_eor/explore/astar_pycpp
+	url = https://github.com/srama2512/astar_pycpp.git
+	branch = exploration_study

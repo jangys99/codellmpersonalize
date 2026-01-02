@@ -1,0 +1,114 @@
+{
+    "bedroom 0": {
+        "receptacle": [
+            "bedroom 0 bottom cabinet 12",
+            "bedroom 0 bottom cabinet 13",
+            "bedroom 0 basket 15",
+            "bedroom 0 basket 14",
+            "bedroom 0 bed 7",
+            "bedroom 0 bottom cabinet 8",
+            "bedroom 0 bottom cabinet 9"
+        ],
+        "object": {
+            "sponge 1": {
+                "receptacle": "bedroom 0 bed 7"
+            }
+        }
+    },
+    "bathroom 0": {
+        "receptacle": [
+            "bathroom 0 bathtub 71",
+            "bathroom 0 top cabinet 70",
+            "bathroom 0 trash can 34",
+            "bathroom 0 toilet 69",
+            "bathroom 0 sink 72",
+            "bathroom 0 mirror 73"
+        ],
+        "object": {
+            "washcloth 1": {
+                "receptacle": "bathroom 0 top cabinet 70"
+            }
+        }
+    },
+    "childs room 0": {
+        "receptacle": [
+            "childs room 0 sofa chair 4",
+            "childs room 0 stool 5",
+            "childs room 0 carpet 0",
+            "childs room 0 bottom cabinet 2",
+            "childs room 0 bed 1",
+            "childs room 0 bottom cabinet 6"
+        ],
+        "object": {
+            "bath sheet 1": {
+                "receptacle": "childs room 0 bed 1"
+            },
+            "diaper pack 1": {
+                "receptacle": "childs room 0 sofa chair 4"
+            },
+            "spoon rest 1": {
+                "receptacle": "childs room 0 bottom cabinet 2"
+            },
+            "parchment sheet 1": {
+                "receptacle": "childs room 0 bottom cabinet 2"
+            }
+        }
+    },
+    "living room 0": {
+        "receptacle": [
+            "living room 0 mirror 68",
+            "living room 0 carpet 62",
+            "living room 0 floor lamp 33",
+            "living room 0 sofa chair 26",
+            "living room 0 coffee table 27",
+            "living room 0 floor lamp 31",
+            "living room 0 bottom cabinet 30",
+            "living room 0 towel rack 66",
+            "living room 0 carpet 28"
+        ],
+        "object": {
+            "towel 1": {
+                "receptacle": "living room 0 carpet 28"
+            }
+        }
+    },
+    "kitchen 0": {
+        "receptacle": [
+            "kitchen 0 bottom cabinet 49",
+            "kitchen 0 bottom cabinet 51",
+            "kitchen 0 dishwasher 52",
+            "kitchen 0 sink 53",
+            "kitchen 0 top cabinet 54",
+            "kitchen 0 top cabinet 55",
+            "kitchen 0 trash can 18",
+            "kitchen 0 fridge 57",
+            "kitchen 0 bottom cabinet 50",
+            "kitchen 0 stove 59",
+            "kitchen 0 range hood 60",
+            "kitchen 0 shelf 58",
+            "kitchen 0 shelf 61"
+        ],
+        "object": {
+            "sponge dish 1": {
+                "receptacle": "kitchen 0 bottom cabinet 49"
+            },
+            "chopping board 1": {
+                "receptacle": "kitchen 0 bottom cabinet 49"
+            },
+            "dishtowel 1": {
+                "receptacle": "kitchen 0 top cabinet 54"
+            }
+        }
+    },
+    "dining room 0": {
+        "receptacle": [
+            "dining room 0 chair 23",
+            "dining room 0 chair 24",
+            "dining room 0 plant 29",
+            "dining room 0 table 20",
+            "dining room 0 chair 21",
+            "dining room 0 chair 22"
+        ],
+        "object": {}
+    }
+}

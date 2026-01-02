@@ -1,0 +1,87 @@
+{
+    "bedroom 0": {
+        "receptacle": [
+            "bedroom 0 bottom cabinet 8",
+            "bedroom 0 bed 28"
+        ],
+        "object": {
+            "hair dryer 1": {
+                "receptacle": "bedroom 0 bottom cabinet 8"
+            },
+            "tomato soup can 1": {
+                "receptacle": "bedroom 0 bottom cabinet 8"
+            }
+        }
+    },
+    "living room 0": {
+        "receptacle": [
+            "living room 0 bottom cabinet 0",
+            "living room 0 bottom cabinet 13",
+            "living room 0 carpet 27",
+            "living room 0 chair 11",
+            "living room 0 chair 12",
+            "living room 0 coffee table 5",
+            "living room 0 loudspeaker 16",
+            "living room 0 office chair 17",
+            "living room 0 shelf 19",
+            "living room 0 shelf 20",
+            "living room 0 shelf 21",
+            "living room 0 sofa 2",
+            "living room 0 standing tv 15",
+            "living room 0 stool 4",
+            "living room 0 table 18",
+            "living room 0 table 9",
+            "living room 0 chair 23",
+            "living room 0 floor lamp 3",
+            "living room 0 chair 24",
+            "living room 0 chair 10"
+        ],
+        "object": {
+            "softball 1": {
+                "receptacle": "living room 0 office chair 17"
+            },
+            "plant 1": {
+                "receptacle": "living room 0 coffee table 5"
+            }
+        }
+    },
+    "lobby 0": {
+        "receptacle": [
+            "lobby 0 bottom cabinet 39"
+        ],
+        "object": {}
+    },
+    "kitchen 0": {
+        "receptacle": [
+            "kitchen 0 bottom cabinet 46",
+            "kitchen 0 top cabinet 49",
+            "kitchen 0 top cabinet 51",
+            "kitchen 0 oven 45",
+            "kitchen 0 top cabinet 50",
+            "kitchen 0 fridge 40",
+            "kitchen 0 top cabinet 48",
+            "kitchen 0 sink 42",
+            "kitchen 0 top cabinet 47",
+            "kitchen 0 microwave 43",
+            "kitchen 0 trash can 25",
+            "kitchen 0 bottom cabinet 41",
+            "kitchen 0 dishwasher 44"
+        ],
+        "object": {
+            "clock 1": {
+                "receptacle": "kitchen 0 sink 42"
+            }
+        }
+    },
+    "bathroom 0": {
+        "receptacle": [
+            "bathroom 0 shower 31",
+            "bathroom 0 mirror 36",
+            "bathroom 0 sink 35",
+            "bathroom 0 towel rack 32",
+            "bathroom 0 carpet 34",
+            "bathroom 0 towel rack 33"
+        ],
+        "object": {}
+    }
+}
