@@ -140,7 +140,7 @@ TORCH_GPU_ID: 0
 NUM_PROCESSES: 1
 LOG_INTERVAL: 10
 CHECKPOINT_INTERVAL: 100
-VIDEO_INTERVAL: 1
+VIDEO_INTERVAL: 1000
 SAVE_VIDEO_AS_RAW_FRAMES: True
 NUM_CHECKPOINTS: -1
 NUM_UPDATES: 100000
@@ -209,7 +209,7 @@ RL:
         max_steps_per_prompt: 10 # cutoff threshold of steps, default to 10
         prev_steps_msg: False # "all", "succeeded", False
         llm_model: 
-          platform: "manual"
+          platform: "openai"
           CUDA_VISIBLE_DEVICES: "0"
           replay:
             mode: "demo"
@@ -240,7 +240,7 @@ RL:
           openai:
             prompt:
               prefix: "step 1:"
-            model: "gpt-3.5-turbo-0613" # "gpt-3.5-turbo-instruct" # "text-davinci-003"
+            model: "ft:gpt-3.5-turbo-1106:hanyang:bt-7-p1-v3:CuxIjvKk" #"gpt-3.5-turbo-1106" # "gpt-3.5-turbo-instruct" # "text-davinci-003"
             sampling_params:
               max_tokens: 256
               temperature: 1
@@ -296,7 +296,7 @@ RL:
           openai:
             prompt:
               prefix: ""
-            model: "gpt-3.5-turbo" # "gpt-3.5-turbo-instruct" # "text-davinci-003"
+            model: "gpt-3.5-turbo-1106" # "gpt-3.5-turbo-instruct" # "text-davinci-003"
             sampling_params:
               max_tokens: 100
               temperature: 1
@@ -352,7 +352,7 @@ RL:
             prompt:
               prefix: "step 1:"
               prefix_planner_msg: "Command from High-level planner: "
-            model: "gpt-3.5-turbo" # "gpt-3.5-turbo-instruct" # "text-davinci-003"
+            model: "gpt-3.5-turbo-1106" # "gpt-3.5-turbo-instruct" # "text-davinci-003"
             sampling_params:
               max_tokens: 200
               temperature: 1
@@ -392,7 +392,7 @@ RL:
           openai:
             prompt:
               prefix: "step 1:"
-            model: "gpt-3.5-turbo-0613" # "gpt-3.5-turbo-instruct" # "text-davinci-003"
+            model: "gpt-3.5-turbo-1106" # "gpt-3.5-turbo-instruct" # "text-davinci-003"
             sampling_params:
               max_tokens: 256
               temperature: 1
@@ -412,7 +412,7 @@ RL:
           openai:
             prompt:
               prefix: ""
-            model: "gpt-3.5-turbo-0613" # "gpt-3.5-turbo-instruct" # "text-davinci-003"
+            model: "gpt-3.5-turbo-1106" # "gpt-3.5-turbo-instruct" # "text-davinci-003"
             sampling_params:
               max_tokens: 256
               temperature: 1

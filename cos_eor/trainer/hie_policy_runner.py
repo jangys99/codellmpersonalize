@@ -191,9 +191,9 @@ class HiePolicyRunner(object):
     def run(self, out_dir=None, resume=False, tag=None, num_eps=1000):
         self.config.defrost()
 
-        navmesh_file = out_dir/self.config.TASK_CONFIG.SIMULATOR.NAVMESH
-        navmesh_file.parent.mkdir(parents=True, exist_ok=True)
-        self.config.TASK_CONFIG.SIMULATOR.NAVMESH = str(navmesh_file)
+        # navmesh_file = out_dir/self.config.TASK_CONFIG.SIMULATOR.NAVMESH
+        # navmesh_file.parent.mkdir(parents=True, exist_ok=True)
+        # self.config.TASK_CONFIG.SIMULATOR.NAVMESH = str(navmesh_file)
 
         dataset_checkpoint_file = self.config.TASK_CONFIG.DATASET.CHECKPOINT_FILE.format(tag=tag)
         if (
@@ -253,8 +253,8 @@ class HiePolicyRunner(object):
                 for env_idx, done in enumerate(dones):
                     actions_buffer[env_idx].append(actions[env_idx]["action"]["action"])
 
-                    for turn_measure_name, turn_measure in turn_measures[env_idx].items():
-                        turn_measures_buffer[env_idx][turn_measure_name].append(turn_measure)
+                    # for turn_measure_name, turn_measure in turn_measures[env_idx].items():
+                    #     turn_measures_buffer[env_idx][turn_measure_name].append(turn_measure)
 
                     state = states[env_idx]["act"]
                     state = "s" if state is None else state[0]
@@ -276,19 +276,19 @@ class HiePolicyRunner(object):
                     cur_episode_id = f"{scene_id}_{cur_episode.episode_id}"
                     episode_stats["episode_id"] = cur_episode_id
 
-                    replays_file = replay_dir/f"ep_{cur_episode_id}.txt"
-                    actions_str = "\n".join(map(str, actions_buffer[env_idx]))
-                    with open(str(replays_file), "w") as f:
-                        f.write(actions_str)
+                    # replays_file = replay_dir/f"ep_{cur_episode_id}.txt"
+                    # actions_str = "\n".join(map(str, actions_buffer[env_idx]))
+                    # with open(str(replays_file), "w") as f:
+                    #     f.write(actions_str)
                     actions_buffer[env_idx] = []
 
-                    for turn_measure_name, turn_measures_episode in turn_measures_buffer[env_idx].items():
-                        turn_measures_str = "\n".join(map(str, turn_measures_episode))
-                        measures_file = turn_measures_dir/turn_measure_name/f"ep_{cur_episode_id}.txt"
-                        measures_file.parent.mkdir(exist_ok=True, parents=True)
-                        with open(measures_file, "w") as f:
-                            f.write(turn_measures_str)
-                        turn_measures_buffer[env_idx][turn_measure_name].clear()
+                    # for turn_measure_name, turn_measures_episode in turn_measures_buffer[env_idx].items():
+                    #     turn_measures_str = "\n".join(map(str, turn_measures_episode))
+                    #     measures_file = turn_measures_dir/turn_measure_name/f"ep_{cur_episode_id}.txt"
+                    #     measures_file.parent.mkdir(exist_ok=True, parents=True)
+                    #     with open(measures_file, "w") as f:
+                    #         f.write(turn_measures_str)
+                    #     turn_measures_buffer[env_idx][turn_measure_name].clear()
 
                     states_buffer[env_idx].append(cur_episode_id)
                     self.write_line_to_csv(states_file, states_buffer[env_idx])
@@ -309,6 +309,9 @@ class HiePolicyRunner(object):
                         self.policy.debug_video = True
 
                     self.policy.reset()
+                    import gc
+                    gc.collect()
+                    torch.cuda.empty_cache()
 
                     if not is_metrics_header_written:
                         metrics_file.write(",".join(episode_stats.keys()) + "\n")

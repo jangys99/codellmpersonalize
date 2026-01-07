@@ -1422,7 +1422,7 @@ class LLMModelOpenai(LLMModel):
         RETRY_DELAY = 60
         for attempt in range(MAX_RETRY):
             try:
-                if self.config[MODEL] == GPT_35_TURBO or self.config[MODEL] in ['gpt-3.5-turbo-1106', 'gpt-3.5-turbo-0613'] or GPT_4 in self.config[MODEL] or 'ft:gpt-3.5-turbo-0613:' in self.config[MODEL]:
+                if self.config[MODEL] == GPT_35_TURBO or self.config[MODEL] in ['gpt-3.5-turbo-1106', 'gpt-3.5-turbo-0613'] or GPT_4 in self.config[MODEL] or 'ft:gpt-3.5-turbo-1106:' in self.config[MODEL]:
                     self.sampling_params_without_logprobs = {k: v for k, v in self.sampling_params.items() if k != LOG_PROBS}
                     messages = [{ ROLE: SYSTEM, CONTENT: prompt[SYSTEM] }, {ROLE: USER, CONTENT: prompt[USER] + prompt[PREFIX]}]
                     print ('creating prompt resquest...')
