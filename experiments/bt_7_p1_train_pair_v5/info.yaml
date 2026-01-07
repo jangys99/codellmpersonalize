@@ -1,0 +1,63 @@
+chosen_episodes_per_scene:
+  pomaria_1_int:
+  - 26
+  - 29
+  - 30
+  - 32
+  - 33
+  - 34
+  - 35
+  - 36
+  - 37
+  - 39
+  - 40
+  - 41
+  - 42
+  - 44
+  - 45
+  - 48
+  - 49
+  - 50
+  - 51
+  - 52
+  - 53
+  - 54
+  - 56
+  - 57
+  - 58
+  - 59
+  - 60
+  - 61
+  - 62
+  - 64
+  - 65
+  - 66
+  - 67
+  - 70
+  - 71
+  - 73
+  - 74
+  - 75
+  - 76
+  - 77
+  - 79
+  - 80
+  - 81
+  - 82
+  - 84
+  - 85
+  - 86
+  - 87
+  - 88
+  - 89
+  - 91
+  - 92
+logs_id: single_run_21_demo_easy
+num_episodes_per_scene: 52
+num_train_episodes: 50
+num_train_samples: 255
+num_valid_episodes: 2
+num_valid_samples: 11
+scenes:
+- pomaria_1_int
+starting_episode: 25

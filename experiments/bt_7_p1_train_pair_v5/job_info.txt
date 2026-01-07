@@ -1,0 +1,5 @@
+training file id: file-TG7LS8mb3qSALFE4o9h9rd
+validation file id: file-AKb5f4eB966AVmwStFR89e
+finetune job id: ftjob-3csgBhAgjvayVQrU1KD6qf1h
+finetune model: gpt-3.5-turbo-1106
+finetune suffix: bt_7_p1_v5

@@ -216,6 +216,7 @@ class HiePolicyRunner(object):
             if torch.cuda.is_available()
             else torch.device("cpu")
         )
+        # self.device = torch.device('cpu')
         count_steps, count_checkpoints, update_start = self._setup_policy()
         self.policy.reset()
 
@@ -262,7 +263,7 @@ class HiePolicyRunner(object):
 
                     if not done:
                         continue
-
+                                            
                     num_dones += 1
                     episode_stats = self._extract_scalars_from_info(infos[env_idx])
                     episode_stats.update(self.policy.get_info())
@@ -309,9 +310,6 @@ class HiePolicyRunner(object):
                         self.policy.debug_video = True
 
                     self.policy.reset()
-                    import gc
-                    gc.collect()
-                    torch.cuda.empty_cache()
 
                     if not is_metrics_header_written:
                         metrics_file.write(",".join(episode_stats.keys()) + "\n")
@@ -324,7 +322,7 @@ class HiePolicyRunner(object):
                         print(f"Aggregated stats for {num_episodes} episodes:")
                         for k in aggregated_stats:
                             print(f"{k}: {aggregated_stats[k]/num_episodes}")
-
+                                                    
                 pbar.update(num_dones)
 
         self.envs.close()
@@ -356,18 +354,21 @@ def main():
     parser.add_argument(
         "--exp-config",
         type=str,
-        required=True,
+        default='/workspace/codellmpersonalize/logs/bt_7_p1_train_pair_test_v4/configs/pomaria_1_int.yaml',
+        # required=True,
         help="path to config yaml containing info about experiment",
     )
     parser.add_argument(
         "--out-dir",
+        default='/workspace/codellmpersonalize/logs/bt_7_p1_train_pair_test_v4',
         type=Path,
         help="output directory"
     )
     parser.add_argument(
         "--num-eps",
+        default=11,
         type=int,
-        required=True,
+        # required=True,
         help="number of episodes"
     )
     parser.add_argument(
@@ -384,7 +385,8 @@ def main():
     )
     parser.add_argument(
         "--tag",
-        required=True,
+        default='pomaria_1_int',
+        # required=True,
         type=str,
         help="experiment-tag"
     )

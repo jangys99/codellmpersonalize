@@ -317,11 +317,11 @@ class HiePolicy:
             fail_counter = 0 # reset to 0 as soon as a valid step gets executed, else +1
             while True:
                 # 2. 추가
-                if len(self.plan_module.prompt_history) == 1:
-                    current_step_idx = self.plan_module.cur_step
-                    if self.plan_module.plan.get_step(current_step_idx) is None:
-                        if not self.is_graph_saved:
-                            self._save_graph_immediately()
+                # if len(self.plan_module.prompt_history) == 1:
+                #     current_step_idx = self.plan_module.cur_step
+                #     if self.plan_module.plan.get_step(current_step_idx) is None:
+                #         if not self.is_graph_saved:
+                #             self._save_graph_immediately()
 
                 nl_context = self.context_module.get_nl_context()
                 if self.plan_module.config[SINGLE][LLM_MODEL][PLATFORM] == MANUAL:
