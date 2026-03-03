@@ -124,6 +124,8 @@ class CosRearrangementEpisode(Episode):
         start_mapping = self.get_mapping("start")
         return_dict = {}
         for ok in objs:
+            if ok not in task.obj_key_to_sim_obj_id:
+                continue
             oid = task.obj_key_to_sim_obj_id[ok]
 
             gripped_object_id = task._sim.gripped_object_id
@@ -167,6 +169,9 @@ class CosRearrangementEpisode(Episode):
     def get_current_object_positions(self, task):
         objs_pos = []
         for ok in self.objs_keys:
+            # 추가 수정
+            if ok not in task.obj_key_to_sim_obj_id:
+                continue
             oid = task.obj_key_to_sim_obj_id[ok]
             objs_pos.append(task.get_translation(oid))
         return objs_pos
@@ -187,6 +192,9 @@ class CosRearrangementEpisode(Episode):
             types = ["l2", "geo"]
         agent_obj_mapping = {}
         for ok in self.objs_keys:
+            if ok not in task.obj_key_to_sim_obj_id:
+                # [수정] 로드되지 않은 오브젝트는 건너뜀
+                continue
             agent_obj_mapping[ok] = {}
             oid = task.obj_key_to_sim_obj_id[ok]
             if "geo" in types:
@@ -211,6 +219,9 @@ class CosRearrangementEpisode(Episode):
                     "l2_dist": -1
                 }
                 continue
+            if ok not in task.obj_key_to_sim_obj_id:
+                # [수정] 로드되지 않은 오브젝트는 건너뜀
+                continue
             oid = task.obj_key_to_sim_obj_id[ok]
             if "geo" in types:
                 geo_dist = task._sim.get_or_dist(oid, "geo")
@@ -232,7 +243,16 @@ class CosRearrangementEpisode(Episode):
         for obj_key in self.objs_keys:
             if task is not None:
                 # return object-ids
-                obj_rec_mapping[task.obj_key_to_sim_obj_id[obj_key]] = task.obj_key_to_sim_obj_id[self.get_rec(obj_key, matrix)]
+                # obj_rec_mapping[task.obj_key_to_sim_obj_id[obj_key]] = task.obj_key_to_sim_obj_id[self.get_rec(obj_key, matrix)]
+                if obj_key not in task.obj_key_to_sim_obj_id:
+                    # [수정] 로드되지 않은 오브젝트는 건너뜀
+                    continue
+                rec_key = self.get_rec(obj_key, matrix)
+                if rec_key not in task.obj_key_to_sim_obj_id:
+                    # [수정] 로드되지 않은 수납 공간에 있는 경우도 건너뜀
+                    continue
+                obj_rec_mapping[task.obj_key_to_sim_obj_id[obj_key]] = task.obj_key_to_sim_obj_id[rec_key]
+
             else:
                 # return object-keys
                 obj_rec_mapping[obj_key] = self.get_rec(obj_key, matrix)
@@ -262,15 +282,20 @@ class CosRearrangementEpisode(Episode):
         return obj_rec_mapping
 
     def get_objects_ids(self, task):
-        return [task.obj_key_to_sim_obj_id[key] for key in self.objs_keys]
+        # return [task.obj_key_to_sim_obj_id[key] for key in self.objs_keys]
+        return [task.obj_key_to_sim_obj_id[key] for key in self.objs_keys if key in task.obj_key_to_sim_obj_id]
+
 
     def get_objects_on_rec(self, task, rec_id):
         """Get all objects currently placed on the given receptacle"""
+        if rec_id not in task.sim_obj_id_to_obj_key:
+            return []
         rec_key = task.sim_obj_id_to_obj_key[rec_id]
         rec_idx = self.recs_keys.index(rec_key)
         obj_idxs = np.argwhere(self.state_matrix[rec_idx]).squeeze(axis=-1)
         obj_keys = [self.objs_keys[obj_idx] for obj_idx in obj_idxs]
-        obj_ids = [task.obj_key_to_sim_obj_id[obj_key] for obj_key in obj_keys]
+        # obj_ids = [task.obj_key_to_sim_obj_id[obj_key] for obj_key in obj_keys]
+        obj_ids = [task.obj_key_to_sim_obj_id[obj_key] for obj_key in obj_keys if obj_key in task.obj_key_to_sim_obj_id]
         return obj_ids
 
     def update_mapping(self, obj_id, update_type, task, rec_id=-1):

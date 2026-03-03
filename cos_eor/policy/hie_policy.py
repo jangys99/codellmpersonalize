@@ -296,6 +296,76 @@ class HiePolicy:
         except Exception as e:
             print(f"[Error] Failed to save graph immediately: {e}")
 
+    # 추가 수정
+    def load_next_state_llm_planner_lite(self):
+        # 이전 행동이 진행 중이면 리턴
+        if self.controller_in_progress:
+            self.curr_state["done"] = False
+            return
+        
+        nl_context = self.context_module.get_nl_context()
+        # LITEPlanner는 그래프 정보(info)가 필수입니다.
+        info = self.context_module.get_debug_info()
+
+        # 계획이 없거나 다 수행했으면 새로 계획 수립 요청
+        # (LITEPlanModule에 prompt_and_plan, get_next_step_and_increase_counter 구현 필요)
+        if len(self.plan_module.prompt_history) == 0: 
+             self.plan_module.prompt_and_plan(nl_context, info=info)
+
+        explore_type = self.policy_params.explore.type
+        if explore_type == "oracle":
+            self.log("LITEPlanner assigning new task!")
+            
+            fail_counter = 0 
+            while True:
+                # 다음 스텝 가져오기
+                next_step = self.plan_module.get_next_step_and_increase_counter(nl_context, info=info)
+                self.log(f"--- Next Step: {next_step} ---")
+            
+                if next_step is None or next_step == MISSION_COMPLETE or fail_counter > self.plan_module.fail_threshold:
+                    if next_step == MISSION_COMPLETE:
+                        self.open_execution_record_and_snapshot_graph(next_step.lower(), {})
+                        self.close_execution_record_and_summarise_graph(SKIP)
+                    print ("plan finished, next step", next_step, 'failed attempts', fail_counter)
+                    self.curr_state["act"] = None
+                    self.curr_state["done"] = True
+                    self.house_logger.summarise_record()
+                    break
+
+                # 텍스트 행동을 파싱하여 시뮬레이터 액션으로 변환
+                plan_action, target_obj, target_rec, target_type, flag = self.plan_module.postprocess(next_step, self.context_module.get_observed())
+                self.open_execution_record_and_snapshot_graph(next_step.lower(), {ACTION: plan_action, TARGET_OBJ: target_obj, TARGET_REC: target_rec, TARGET_TYPE: target_type})
+                
+                if flag == SUC:
+                    try:
+                        if target_type != PRIMITIVE:
+                            if target_obj is not None:
+                                target_obj = self.get_oi_from_obj_key(target_obj, type=OBJ)
+                            if target_rec is not None:
+                                target_rec = self.get_oi_from_obj_key(target_rec, type=REC)
+                    except KeyError as e:
+                        print (f'key error {e}')
+                        fail_counter += 1
+                        self.curr_state["done"] = False
+                        self.close_execution_record_and_summarise_graph(SKIP)
+                        continue
+
+                    self.curr_state["act"] = plan_action 
+                    self.curr_state["target"] = target_type
+                    self.curr_state["status"] = INP
+                    self.curr_state['target_obj'] = target_obj
+                    self.curr_state['target_rec'] = target_rec
+                    self.curr_state["done"] = False
+                    break 
+
+                elif flag == FAIL:
+                    fail_counter += 1
+                    self.curr_state["done"] = False
+                    self.close_execution_record_and_summarise_graph(SKIP)
+                    continue
+        else:
+            print (f"explore type {explore_type} not implemented for LITE")
+    
         
     def load_next_state_llm_planner(self):
         # if the agent haven't completed the last step, continue
@@ -709,6 +779,8 @@ class HiePolicy:
                 self.load_next_state_llm_planner_sayplan()
             elif self.plan_module.name == SAYCAN:
                 self.load_next_state_llm_planner_saycan()
+            elif self.plan_module.name == LITE:
+                self.load_next_state_llm_planner_lite()
             else:
                 print (f"Plan module {self.plan_module.name} not implemented by llm loop action")
             if self.curr_state["act"] is None:
@@ -725,6 +797,12 @@ class HiePolicy:
             return action
         
     def write_house_logs_to_file(self, output_file_path):
+        if self.plan_module.name == LITE:
+            lite_stats = {
+                "total_llm_calls": self.plan_module.lite_planner.llm_calls + 1,
+                "total_ppr_calls": self.plan_module.lite_planner.ppr_calls
+            }
+            self.house_logger.records.append({'total_calls': lite_stats})
         self.house_logger.write_log_to_file(output_file_path)
     
     def create_text_logs(self, action, cos_eor_sensor):
@@ -843,7 +921,56 @@ class HiePolicy:
             self.cache_raw_obs(observations, action)
             self.increment_timestep()
             return action, [self.turn_measures]
+        
+        # 추가 수정
+        elif self.plan_module.name == LITE:
+            assert (self.policy_params.explore.type == "oracle")
 
+            self.load_next_state_llm_planner_lite()
+
+            action = None
+            result = None
+            
+            if not self.curr_state["done"]:
+                if self.curr_state["act"] == NAV:
+                    result = self.atomic_nav(observations, self.curr_state["target_obj"], self.curr_state["target_rec"],self.curr_state["target"])
+                    if result["action"] is not None:
+                        action = result
+                    else:
+                        self.controller_in_progress = False
+                        result = self.loop_action_llm(observations, result)
+                elif self.curr_state["act"] == LOOK:
+                    result = self.atomic_look_at(observations, self.curr_state["target_obj"], self.curr_state["target_rec"],self.curr_state["target"])
+                    if result["action"] is not None:
+                        action = result
+                    else:
+                        self.controller_in_progress = False
+                        result = self.loop_action_llm(observations, result)
+                elif self.curr_state["act"] == PP:
+                    result = self.atomic_pick_place(observations, self.curr_state["target_obj"], self.curr_state["target_rec"],self.curr_state["target"])
+                    if result["action"] is not None:
+                        action = result
+                    else:
+                        self.controller_in_progress = False
+                        result = self.loop_action_llm(observations, result)
+                else:
+                    print (f"self.curr_state not in the right form: {self.curr_state['act']}")
+                    raise ValueError
+                
+            if result is None:
+                result = {"action": 0, "flag": DONE}
+            
+            if result['flag'] == INP:
+                self.controller_in_progress = True
+            elif result['flag'] in [SUC, FAIL]:
+                self.controller_in_progress = False
+            
+            action = result
+            wrapped_action = self.wrap_action(action)
+            self.cache_raw_obs(observations, wrapped_action)
+            self.increment_timestep()
+            return wrapped_action, [self.turn_measures]
+            
         elif self.plan_module.name == LLMZEROSHOT:
             # Assume: the whole world of observations are given upfront and no exploration needed.
             # Hence currently the llm zeroshot model only works with oracle explorer

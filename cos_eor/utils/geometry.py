@@ -307,7 +307,9 @@ def check_percent_nav(sim):
         act = greedy_follower.get_next_action(nop)
         is_nav = act != 0
         navigable.append(is_nav)
-    percent_nav = np.array(navigable, dtype=np.float).sum() / len(navigable)
+    # 수정
+    # percent_nav = np.array(navigable, dtype=np.float).sum() / len(navigable)
+    percent_nav = np.array(navigable, dtype=float).sum() / len(navigable)
     return percent_nav
 
 
@@ -342,8 +344,10 @@ def add_object_on_receptacle(obj_id, rec_id, sim, recs_packers):
     point, should_rotate = get_surface_point_for_placement(sim, recs_packers, obj_id, rec_id, "pack")
     # can't fit the object on receptacle
     if not point:
-        sim.set_translation(org_trans, obj_id)
-        return False
+        # Place 수정
+        point, should_rotate = get_surface_point_for_placement(sim, recs_packers, obj_id, rec_id, "center")
+        # sim.set_translation(org_trans, obj_id)
+        # return False
 
     sim.set_translation(point, obj_id)
     if should_rotate:
@@ -451,7 +455,7 @@ def get_bb_base(bb):
 
 
 def get_bb(sim, obj_id):
-    obj_node = sim.get_object_scene_node(obj_id)
+    obj_node = sim.get_object_scene_node(obj_id)    
     obj_bb = obj_node.cumulative_bb
     corners = get_corners(obj_bb, obj_node)
     tranformed_bb = get_bbs_from_corners(corners)

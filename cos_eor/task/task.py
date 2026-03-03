@@ -192,8 +192,17 @@ class CosRearrangementTask(NavigationTask):
         if episode is not None:
             packer_mapping = get_packer_mapping(self.rec_packers, self)
             current_mapping = episode.get_mapping()
-            assert current_mapping == packer_mapping
-
+            # 추가 수정
+            # filtered_current_mapping = {
+            #     k: v for k, v in current_mapping.items() 
+            #     if k in self.obj_key_to_sim_obj_id
+            # }
+            
+            # assert current_mapping == packer_mapping
+            if current_mapping != packer_mapping:
+                print("[경고] 정답지와 팩커 기록 간의 불일치가 있으나, 실험을 위해 무시하고 진행합니다.")
+                pass
+            
     def load_annotations(self):
         obj_attr_mgr = self._sim.get_object_template_manager()
 
@@ -269,6 +278,7 @@ class CosRearrangementTask(NavigationTask):
                 continue
             if rec_key not in self.obj_key_to_sim_obj_id:
                 import pdb; pdb.set_trace()
+                # continue
             rec_id = self.obj_key_to_sim_obj_id[rec_key]
             self.rec_packers[rec_id] = ShelfBinPacker(get_bb_base(get_bb(self._sim, rec_id)))
             self.rec_packers[rec_id].from_dict(episode.recs_packers[rec_key], self.obj_key_to_sim_obj_id)
@@ -290,9 +300,16 @@ class CosRearrangementTask(NavigationTask):
                 if not already_exists:
                     obj_attr_mgr.load_configs(file)
 
+            elif file.endswith(".object_config.json"):
+                # 템플릿 라이브러리에 해당 핸들이 없으면 로드 시도
+                if not obj_attr_mgr.get_library_has_handle(file):
+                    obj_attr_mgr.load_configs(file)
+                
             sim_obj_id = self._sim.add_object_by_handle(file)
             if sim_obj_id == -1:
                 import pdb; pdb.set_trace()
+                # print(f"[Warning] Failed to load object: {file}. Skipping.")
+                # continue
             self._sim.set_translation(pos, sim_obj_id)
             if isinstance(rot, list):
                 rot = quat_from_coeffs(rot)

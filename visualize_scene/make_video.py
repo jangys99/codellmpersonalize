@@ -3,8 +3,8 @@ import cv2
 import os
 
 # 1. 파일 경로 설정 (사용자님 경로에 맞게 수정하세요)
-npy_path = "./logs/test/videos/pomaria_1_int/ep_Pomaria_1_int_342-frames_1000.npy"
-output_video_name = "./logs/test/videos/pomaria_1_int/output_video.mp4"
+npy_path = "/workspace/codellmpersonalize/logs/ours_scene1_pair_eval_x2/videos/pomaria_1_int/ep_Pomaria_1_int_342-frames_589.npy"
+output_video_name = "/workspace/codellmpersonalize/visualize_scene/output_video.mp4"
 
 def npy_to_mp4(npy_file, output_name, fps=10):
     print(f"Loading {npy_file}...")

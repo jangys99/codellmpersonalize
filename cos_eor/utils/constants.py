@@ -205,6 +205,8 @@ VISIBLE_REC_SIDS = "visible_rec_sids"
 WINDOW = "window"
 WRONG_OBJ = "wrong_objects"
 
+# LITEPlanner
+LITE = 'lite'
 
 # commonly used prefix and postfixes
 

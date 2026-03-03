@@ -25,9 +25,9 @@ def main():
 
     # Loop through each variable and run commands
     for var in vars_list:
-        for i in range(5):
+        for i in range(1):
             print (f'running scene {var}, iteration {i}')
-            run_command(f"./run_cli.sh test {var} 10")
+            run_command(f"./run_cli.sh ours_scene1_pair_eval_x2_v3 {var} 1")
 
 if __name__ == "__main__":
     main()

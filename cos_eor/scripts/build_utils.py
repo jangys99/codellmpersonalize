@@ -43,7 +43,7 @@ def aggregate_amt_annotations(all_recs=None, only_amt=False):
         "data": None
     }
 
-    amt_data = np.load('cos_eor/scripts/orm/amt_data/data.npy', allow_pickle=True).item()
+    amt_data = np.load('/workspace/codellmpersonalize/cos_eor/scripts/orm/amt_data/data.npy', allow_pickle=True).item()
     agg_data["room_recs"] = [str(rr.replace("|", "-")) for rr in amt_data["room_receptacles"]]
     agg_data["objs"] = [str(obj) for obj in amt_data["objects"]]
     agg_data["recs"] = list(set([str(rr.split("|")[-1]) for rr in amt_data["room_receptacles"]]))
@@ -62,7 +62,7 @@ def aggregate_amt_annotations(all_recs=None, only_amt=False):
     semantic_classes.sort()
     assert len(semantic_classes) == len(set(semantic_classes))
     semantic_class_id_map = list(enumerate(semantic_classes, start=1))
-    sem_classes_path = "cos_eor/scripts/dump/semantic_classes_amt.yaml"
+    sem_classes_path = "/workspace/codellmpersonalize/cos_eor/scripts/dump/semantic_classes_amt.yaml"
     yaml.dump({"semantic_class_id_map": semantic_class_id_map}, open(sem_classes_path, "w"))
     print(f"Dumped Semantic class-id map: {sem_classes_path}")
     return agg_data, semantic_classes

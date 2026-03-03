@@ -17,7 +17,7 @@ BASE_TASK_CONFIG:
       RADIUS: 0.18
       MAX_CLIMB: 0.1
     HABITAT_SIM_V0:
-      GPU_DEVICE_ID: 0
+      GPU_DEVICE_ID: 2
       ALLOW_SLIDING: True
       ENABLE_PHYSICS: True
       PHYSICS_CONFIG_FILE: "./data/default.physics_config.json"
@@ -135,8 +135,8 @@ BASE_TASK_CONFIG:
 
 TRAINER_NAME: "ddppo"
 ENV_NAME: "CosRearrangementRLEnv"
-SIMULATOR_GPU_ID: [0]
-TORCH_GPU_ID: 0
+SIMULATOR_GPU_ID: [2]
+TORCH_GPU_ID: 2
 NUM_PROCESSES: 1
 LOG_INTERVAL: 10
 CHECKPOINT_INTERVAL: 100
@@ -197,6 +197,11 @@ RL:
       room_scores_file: "cos_eor/scripts/orm/clip_obj_room_scores.npy"
     plan:
       name: "$plan_type" # "oracle", "llmzeroshot", "llmadaptor"
+      lite:
+        model_name: "ft:gpt-4.1-mini-2025-04-14:rhlab:ix-v3-scene3-demon:D7iFLbvY"
+        ours_mis_prompt_path: "/workspace/lite_planner/src/data/prompt_mis.jsonl"
+        ours_rec_prompt_path: "/workspace/lite_planner/src/data/prompt_rec.jsonl"
+        confidence_threshold: 0.26
       fail_threshold: 30
       prompt_threshold: 150
       option:
@@ -210,7 +215,7 @@ RL:
         prev_steps_msg: False # "all", "succeeded", False
         llm_model: 
           platform: "openai"
-          CUDA_VISIBLE_DEVICES: "0"
+          CUDA_VISIBLE_DEVICES: "2"
           replay:
             mode: "demo"
             log_path: "logs/ft_27_iter_2_from_ft_23_pair_personal/demo/pomaria_1_int/data_2023-12-06_13-03-33.json"
@@ -240,7 +245,7 @@ RL:
           openai:
             prompt:
               prefix: "step 1:"
-            model: "ft:gpt-3.5-turbo-1106:hanyang:bt-7-p1-v4:CvGxPpXU" #"gpt-3.5-turbo-1106" # "gpt-3.5-turbo-instruct" # "text-davinci-003"
+            model: "ft:gpt-4.1-mini-2025-04-14:rhlab:ix-v7-scene1-demon:D4h8kHbD" #"gpt-3.5-turbo-1106" # "gpt-3.5-turbo-instruct" # "text-davinci-003"
             sampling_params:
               max_tokens: 256
               temperature: 1

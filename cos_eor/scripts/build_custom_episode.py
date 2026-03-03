@@ -49,6 +49,8 @@ from igib_assemble_obj import urdf_to_obj, URDF_OBJ_CACHE
 from cos_eor.utils.shelf_bin_packer import ShelfBinPacker
 from cos_eor.scripts.build_utils import aggregate_amt_annotations, get_scene_rec_names, match_rec_cat_to_instances
 
+import cos_eor.explore.sim
+
 logging.basicConfig()
 logging.getLogger().setLevel(logging.ERROR)
 MAX_DIST = 1.2
@@ -57,7 +59,7 @@ RECEPTACLE_DROPOUT = 0.25
 def get_sim(scene, sim):
     """Habitat doesn't allow creating multiple simulators, and throws an error w/ OpenGL."""
     if not sim:
-        config = habitat.get_config("cos_eor/configs/dataset/build_dataset.yaml")
+        config = habitat.get_config("/workspace/codellmpersonalize/cos_eor/configs/dataset/build_dataset.yaml")
         config = habitat.get_config_new([config.BASE_TASK_CONFIG])
         config.defrost()
         config.SIMULATOR.SCENE = scene
@@ -72,6 +74,10 @@ def get_sim(scene, sim):
 
     init_metadata = sim.init_metadata_objects()
     sim.navmesh_visualization = True
+    
+    # 수정
+    sim._is_episode_active = True
+    sim._update_map_observations = lambda obs: obs
     return sim, init_metadata
 
 
@@ -681,9 +687,9 @@ def assert_mapping_consistency(packers, state_matrix, scene_objs_ids, scene_recs
     if state_mapping != packer_mapping:
         import pdb
         pdb.set_trace()
+        
 
-
-def build_episode(sim, data, object_info, scene, episode, cat_data, scene_metadata, annotations, checks_threshold=50, multiplier=1):
+def build_episode(sim, data, object_info, scene, episode, cat_data, scene_metadata, annotations, checks_threshold=50, target_misplaced=None, target_correct=None):
     obj_attr_mgr = sim.get_object_template_manager()
     agent_init_state = sim.get_agent_state()
     num_objects = np.random.choice(object_info["objects"])
@@ -700,35 +706,74 @@ def build_episode(sim, data, object_info, scene, episode, cat_data, scene_metada
 
     # sample objects their start and end receptacles from annotations
     objs_cats, init_recs, end_recs = filter_annotations(annotations, scene_recs_keys, cat_data)
-    # objs_cats, init_recs, end_recs = np.array(objs_cats), np.array(init_recs), np.array(end_recs)
-    # idx = np.where(objs_cats == "guitar")[0][0]
-    # inds = [idx, scene_objs_ids.index(145)]
-    # objs_cats, init_recs, end_recs = objs_cats[inds], init_recs[inds], end_recs[inds]
-    # idx2 = 145
+    
+    # ------------------------------------------------------------------
+    # [핵심 1] 타겟 물체 강제 주입 로직 (동일 물체 2개 완벽 호환)
+    # ------------------------------------------------------------------
+    if target_misplaced and target_correct:
+        try:
+            if target_misplaced == target_correct:
+                idx = objs_cats.index(target_misplaced)
+                t_cat, t_init, t_end = objs_cats.pop(idx), init_recs.pop(idx), end_recs.pop(idx)
+                
+                # 동일한 물체 2개 강제 삽입
+                objs_cats.insert(0, t_cat); init_recs.insert(0, t_init); end_recs.insert(0, t_end)
+                objs_cats.insert(0, t_cat); init_recs.insert(0, t_init); end_recs.insert(0, t_end)
+            else:
+                idx_c = objs_cats.index(target_correct)
+                c_cat, c_init, c_end = objs_cats.pop(idx_c), init_recs.pop(idx_c), end_recs.pop(idx_c)
+                
+                idx_m = objs_cats.index(target_misplaced)
+                m_cat, m_init, m_end = objs_cats.pop(idx_m), init_recs.pop(idx_m), end_recs.pop(idx_m)
+                
+                objs_cats.insert(0, c_cat); init_recs.insert(0, c_init); end_recs.insert(0, c_end)
+                objs_cats.insert(0, m_cat); init_recs.insert(0, m_init); end_recs.insert(0, m_end)
+                
+            print(f"\n[알림] '{target_misplaced}'(Mis)와 '{target_correct}'(Cor)를 최우선 배치합니다!")
+            import pdb; pdb.set_trace()
+        except ValueError:
+            print(f"\n[경고] '{target_misplaced}'를 현재 씬(Scene)에 배치할 조건이 안 되어 랜덤으로 진행합니다.")
+            import pdb; pdb.set_trace()
+    # ------------------------------------------------------------------
 
-
-    # same object can be inserted multiple times, keep a counter
     end_matrix = deepcopy(state_matrix)
     obj_counter = Counter()
     rec_counter = Counter()
     episode_obj_files = deepcopy(scene_objs_keys)
-    # original state_matrix shape (to record original no. of receptacles/objects)
     default_matrix_shape = state_matrix.shape
     obj_count = 0
     mis_obj_count = 0
     oracle_obj_steps, oracle_rec_steps = [], []
+    
+    # ------------------------------------------------------------------
+    # [핵심 2] 배치가 실패해도 역할이 꼬이지 않도록 독립 변수 할당
+    # ------------------------------------------------------------------
+    target_m_assigned = False
+    target_c_assigned = False
 
     for obj_cat, init_rec, end_rec in zip(objs_cats, init_recs, end_recs):
         start_time = time.time()
 
         if obj_count == num_objects and mis_obj_count == num_mis_objects:
+            import pdb; pdb.set_trace()
             break
 
         obj_id, obj_type, obj_orientation, obj_file = add_object_in_scene(obj_cat, data, sim, obj_attr_mgr, cat_data)
-        obj_add_time = time.time()
-
-        # first initialize the misplaced objects then correct objects
-        init_type = "mis" if mis_obj_count < num_mis_objects else "correct"
+        
+        # ------------------------------------------------------------------
+        # [핵심 3] 역할 강제 분배 (아래에서 init_type 덮어씌우는 구문 원천 차단)
+        # ------------------------------------------------------------------
+        if target_misplaced and obj_cat == target_misplaced and not target_m_assigned:
+            init_type = "mis"
+            target_m_assigned = True
+            print(f" -> [{obj_cat}]를 Misplaced(어색한 위치)에 배치 시도 중...")
+        elif target_correct and obj_cat == target_correct and not target_c_assigned:
+            init_type = "correct"
+            target_c_assigned = True
+            print(f" -> [{obj_cat}]를 Correct(올바른 위치)에 배치 시도 중...")
+        else:
+            init_type = "mis" if mis_obj_count < num_mis_objects else "correct"
+        # ------------------------------------------------------------------
 
         # find ids and keys of end receptacles by matching category to scene-keys
         end_rec_cats = [annotations["room_recs"][i] for i in end_rec]
@@ -748,32 +793,18 @@ def build_episode(sim, data, object_info, scene, episode, cat_data, scene_metada
 
         # based on type of initialization, fill-in rec_keys and rec_ids to be used
         if init_type == "mis":
-            # place on incorrect receptacle only
             rec_keys, rec_ids = init_rec_keys, init_rec_ids
         else:
-            # place on correct (end) receptacle only
             rec_keys, rec_ids = end_rec_keys, end_rec_ids
 
-        # attempt_order = list(range(len(rec_keys)))
-        # random.shuffle(attempt_order)
         obj_steps, rec_steps = -1, -1
-        shuffle_time = time.time()
-
-        loop_add_obj_time = 0
-        loop_check_time = 0
 
         for _idx, (rec_id, rec_key) in enumerate(zip(rec_ids, rec_keys)):
             success, added = [False] * 2
             if rec_counter[rec_key] >= 2:
-                # print(f"Skipping {rec_key} because too much clutter on one receptacle!")
                 continue
 
-            _loop_start_time = time.time()
-            # rec_key, rec_id = rec_keys[rec_idx], rec_ids[rec_idx]
-
             added = add_object_on_receptacle(obj_id, rec_id, sim, recs_packers)
-            _loop_add_obj_time = time.time()
-            loop_add_obj_time += (_loop_add_obj_time - _loop_start_time)
 
             if added:
                 if init_type == "mis":
@@ -784,19 +815,12 @@ def build_episode(sim, data, object_info, scene, episode, cat_data, scene_metada
                     success = check_shortest_path_exists(sim, obj_id)
                     obj_steps, rec_steps = 0, 0
 
-            # calculate loop times
-            _loop_check_time = time.time()
-            loop_check_time += (_loop_check_time - _loop_add_obj_time)
-
             if success:
                 oracle_obj_steps.append(obj_steps)
                 oracle_rec_steps.append(rec_steps)
                 if init_type == "mis":
                     mis_obj_count += 1
                 obj_count += 1
-                if rec_counter[rec_key] == 2:
-                    import pdb
-                    pdb.set_trace()
                 rec_counter[rec_key] += 1
                 break
 
@@ -809,15 +833,8 @@ def build_episode(sim, data, object_info, scene, episode, cat_data, scene_metada
                     pdb.set_trace()
 
             if _idx > checks_threshold:
-                print(f"Skipping {obj_cat} because too much effort!")
+                # 너무 많은 시도를 하면 건너뜀
                 break
-            # if not reachable:
-            #     print(f"Skipping because not reachable!")
-            # if not solvable:
-            #     print(f"Skipping because not solvable!")
-            # if not success:
-            #     print(f"Skipping because couldn't place!")
-        loop_out_time = time.time()
 
         # save if successful placement
         (
@@ -829,35 +846,18 @@ def build_episode(sim, data, object_info, scene, episode, cat_data, scene_metada
                                      obj_counter, obj_id, obj_cat, rec_key, end_rec, obj_file, obj_steps,
                                      rec_steps, annotations, recs_packers)
 
-        # consistency check
         if len(oracle_obj_steps) != len(scene_objs_ids):
             import pdb
             pdb.set_trace()
 
-        record_time = time.time()
-        # print(
-        #     f"obj_add: {obj_add_time - start_time} "
-        #     f"shuffle: {shuffle_time - obj_add_time} "
-        #     f"loop_add_obj: {loop_add_obj_time} "
-        #     f"loop_check: {loop_check_time}"
-        #     f"record: {record_time - loop_out_time} "
-        # )
-
     # measure how many misplaced objects are inserted, and filter
     misplaced_count = ((state_matrix - end_matrix) * state_matrix).sum()
-
-    # start from initial point and solve each rearrangement
     oracle_steps_solve = sum(oracle_obj_steps) + sum(oracle_rec_steps)
 
     print(f"Misplaced objects: {misplaced_count} // Inserted objects: {obj_count} "
           f"// Inserted misplaced: {mis_obj_count} // oracle-steps: {oracle_steps_solve}")
 
-    # ensure packers are in sync with actual inserted objects
     packers_ids = [list(packer.matches.keys()) for _, packer in recs_packers.items()]
-    for pids in packers_ids:
-        if len(pids) > 2:
-            import pdb
-            pdb.set_trace()
     packers_ids = list(itertools.chain.from_iterable(packers_ids))
     try:
         assert len(packers_ids) == obj_count == state_matrix.shape[1]
@@ -868,30 +868,16 @@ def build_episode(sim, data, object_info, scene, episode, cat_data, scene_metada
     if misplaced_count not in object_info["mis_objects"] or obj_count not in object_info["objects"]:
         return None
 
-    # pack and ship this episode in a dictionary
     episode_dict = init_episode_dict(scene, episode, agent_init_state)
-
-    # return position / rotation of newly placed objects // start-matrix // end-matrix
     scene_recs_pos = [np.array(sim.get_translation(id)).tolist() if id != -1 else [0.0]*3 for id in scene_recs_ids]
     scene_objs_pos = [np.array(sim.get_translation(id)).tolist() for id in scene_objs_ids]
-
-    # get closest navigable points to receptacles
     nav_recs_pos = [np.array(get_closest_nav_point(sim, pos, ignore_y=True)).tolist() for pos in scene_recs_pos]
 
-    # get categories of every receptacle and object
     scene_recs_cats = ["_".join(k.split("-")[1].split("_")[:-2]) for k in scene_recs_keys]
     scene_objs_cats = ["_".join(k.split("_")[:-1]) for k in scene_objs_keys]
 
-    # sanity check
-    for cat in scene_objs_cats + scene_recs_cats:
-        if cat not in cat_data:
-            import pdb
-            pdb.set_trace()
-
-    # assert consistency
     assert_mapping_consistency(recs_packers, state_matrix, scene_objs_ids, scene_recs_ids)
 
-    # replace ids in recs_packers with keys
     id_to_key = {id:k for id, k in zip(scene_objs_ids, scene_objs_keys)}
     recs_packers = {rk: recs_packers[ri].to_dict(keep="key", id_to_key=id_to_key) for ri, rk in zip(scene_recs_ids, scene_recs_keys)}
 
@@ -916,11 +902,8 @@ def build_episode(sim, data, object_info, scene, episode, cat_data, scene_metada
         "oracle_paths": None,
     })
 
-    # remove episode specific objects before init next episode
     inserted_object_ids = scene_objs_ids[default_matrix_shape[-1]:]
-    # assert len(inserted_object_ids) == num_objects
     sim.remove_objects(inserted_object_ids)
-    # print(f"Len: {len(sim.get_both_existing_object_ids()['non_art'])}")
     return episode_dict
 
 
@@ -947,7 +930,7 @@ def rewrite_hack(art_data, k, hack=True):
             art_data[k]["urdfs"] = paths
 
 
-def build_episodes(scenes, episode_num, combined_data, object_info, save_dir, append, debug, annotations, cat_data, multiplier):
+def build_episodes(scenes, episode_num, combined_data, object_info, save_dir, append, debug, annotations, cat_data, target_misplaced=None, target_correct=None, episode_json=None):
     sim = None
     write_freq = 20
 
@@ -974,6 +957,51 @@ def build_episodes(scenes, episode_num, combined_data, object_info, save_dir, ap
         # load all object-cofigs here -- from cache and from data
         load_annotations(sim, combined_data, False)
 
+        # 수정
+        if len(episode_json) > 0:
+            print(f"\n[부분 수정 모드] 지정된 에피소드 {episode_json}의 재생성 및 덮어쓰기를 시작합니다.")
+            
+            for ep_idx in episode_json:
+                if ep_idx >= len(episodes['episodes']):
+                    print(len(episodes['episodes']))
+                    print(f"[경고] 에피소드 {ep_idx}는 기존 데이터의 최대치({len(episodes['episodes'])-1})를 초과하여 건너뜁니다.")
+                    continue
+                
+                print(f"\n--- Rebuilding Episode {ep_idx} ---")
+                
+                # 에피소드 번호를 바탕으로 랜덤 시드 고정 (동일한 배경이 나오도록 유도)
+                np.random.seed(4 + ep_idx)
+                random.seed(4 + ep_idx)
+                
+                start_state, agent_object_id = init_agent(sim)
+                if debug:
+                    debug_sim_viewer(sim)
+                    
+                episode_dict = build_episode(
+                    sim, deepcopy(combined_data), object_info,
+                    scene, ep_idx, cat_data, scene_metadata, deepcopy(annotations),
+                    target_misplaced=target_misplaced, target_correct=target_correct
+                )
+                
+                # 생성 성공 시 기존 리스트의 해당 인덱스 데이터를 교체(Overwrite)
+                if episode_dict is not None:
+                    episodes['episodes'][ep_idx] = episode_dict
+                    print(f" -> 성공: Episode {ep_idx} 데이터가 덮어씌워졌습니다!")
+                else:
+                    print(f" -> 실패: Episode {ep_idx} 생성을 실패하여 기존 데이터를 유지합니다.")
+            
+            # 모든 교체가 끝난 후, 원본 보호를 위해 파일명에 '_modified'를 붙여서 통째로 저장
+            mod_save_file = f"{scene_name}_modified.json.gz"
+            mod_save_path = os.path.join(save_dir, mod_save_file)
+            
+            with gzip.open(mod_save_path, "wt") as f:
+                json.dump(episodes, f)
+            print(f"\n[완료] 기존 {len(episodes['episodes'])}개의 에피소드 중 지정된 내역이 교체되어 저장되었습니다.")
+            print(f"저장 경로: {mod_save_path}\n")
+            
+            # 부분 수정 모드일 때는 아래의 정상 생성(While) 루프를 돌지 않고 다음 씬으로 넘김
+            continue
+        
         episode_specific_ids = []
         pbar = tqdm(total=episode_num, initial=episode, desc="Building Episodes")
         while episode < episode_num:
@@ -983,7 +1011,7 @@ def build_episodes(scenes, episode_num, combined_data, object_info, save_dir, ap
                 debug_sim_viewer(sim)
             episode_dict = build_episode(
                 sim, deepcopy(combined_data), object_info,
-                scene, episode, cat_data, scene_metadata, deepcopy(annotations)
+                scene, episode, cat_data, scene_metadata, deepcopy(annotations), target_misplaced=target_misplaced, target_correct=target_correct
             )
             if episode_dict is not None:
                 episodes['episodes'].append(episode_dict)
@@ -1250,28 +1278,45 @@ def main(args):
     if args.scene_id != -1:
         scenes = [scenes[args.scene_id]]
 
+    episodes_json = []
+    if args.episodes_json and os.path.exists(args.episodes_json):
+        with open(args.episodes_json, 'r') as f:
+            ep_list_str = json.load(f)
+            # JSON 안의 데이터가 문자열(String)이므로 정수(Integer)로 변환
+            episodes_json = [int(ep) for ep in ep_list_str]
+        print(f"\n[알림] JSON 파일에서 총 {len(episodes_json)}개의 타겟 에피소드를 성공적으로 불러왔습니다.")
+    elif args.episodes_json:
+        print(f"\n[에러] 지정한 JSON 파일 경로({args.episodes_json})를 찾을 수 없습니다.")
+        return
+    
+    
     print(f"Using scenes: ")
     for sc in scenes:
         print(sc)
 
     # build episodes now
     build_episodes(scenes, args.episode_num, combined_data=data, object_info=object_info, save_dir=args.save_dir,
-                   append=args.append, debug=args.debug, annotations=annotations, cat_data=cat_data)
+                   append=args.append, debug=args.debug, annotations=annotations, cat_data=cat_data, 
+                   target_misplaced=args.target_misplaced, target_correct=args.target_correct, episode_json=episodes_json)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('--split', dest='split', type=str, help='split')
-    parser.add_argument('--save_dir', dest='save_dir', type=str, help='save_dir')
+    parser.add_argument('--save_dir', dest='save_dir', type=str, default='/workspace/codellmpersonalize/data/datasets/gen_test2', help='save_dir')
     parser.add_argument('--append', dest='append', action='store_true', help='append')
     parser.add_argument('--num_eps', dest='episode_num', type=int, help='episode_num')
-    parser.add_argument('--max_objects', dest='max_num_object', type=int, help='num_object')
-    parser.add_argument('--min_objects', dest='min_num_object', type=int, help='num_object')
-    parser.add_argument('--max_mis_objects', dest='max_mis_num_object', type=int, help='num_object')
-    parser.add_argument('--min_mis_objects', dest='min_mis_num_object', type=int, help='num_object')
+    parser.add_argument('--max_objects', dest='max_num_object', type=int, default=11, help='num_object')
+    parser.add_argument('--min_objects', dest='min_num_object', type=int, default=5, help='num_object')
+    parser.add_argument('--max_mis_objects', dest='max_mis_num_object', type=int, default=7, help='num_object')
+    parser.add_argument('--min_mis_objects', dest='min_mis_num_object', type=int, default=3, help='num_object')
     parser.add_argument('--debug', dest="debug", action='store_true')
     parser.add_argument('--reset', dest="reset_scale_rots", action='store_true')
-    parser.add_argument('--scene_id', dest="scene_id", type=int, default=-1)
+    parser.add_argument('--scene_id', dest="scene_id", type=int, default=4)
+    # parser.add_argument('--target_object', dest='target_object', type=str, default='chocolate', help='Target object')
+    parser.add_argument('--target_misplaced', dest='target_misplaced', type=str, default='chocolate', help='잘못된 위치(Misplaced)에 놓을 물체')
+    parser.add_argument('--target_correct', dest='target_correct', type=str, default='chocolate', help='올바른 위치(Correct)에 놓을 물체')
+    parser.add_argument('--episodes_json', dest='episodes_json', type=str, default='/workspace/codellmpersonalize/data/datasets/gen_test/episode_id/episode_ids_scene1.json', help='타겟 에피소드 번호가 담긴 JSON 파일 경로')
     args = parser.parse_args()
     main(args)
 

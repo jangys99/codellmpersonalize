@@ -1,0 +1,115 @@
+[
+    {
+        "category": "apparel",
+        "objects": ["cloth", "gloves", "handbag",
+                    "hat", "heavy duty gloves", "helmet",
+                    "shoe", "umbrella"]
+    },
+    {
+        "category": "appliance",
+        "objects": ["camera", "clock", "coffeemaker", "electric heater", "fitness tracker wristband",
+                    "flashlight", "hair dryer", "hair straightener", "instant camera", "lamp", "laptop",
+                    "light bulb", "milk frother", "portable speaker", "router", "set-top box",
+                    "shredder", "stand mixer", "table lamp", "tablet", "thermal laminator", "toaster",
+                    "virtual reality viewer"]
+    },
+    {
+        "category": "cooking utensil",
+        "objects": ["blender jar", "bundt pan", "casserole dish",
+                    "dispensing closure", "dutch oven", "pan", "pitcher base",
+                    "pressure cooker", "ramekin", "saute pan", "skillet",
+                    "skillet lid","spatula", "teapot"]
+    },
+    {
+        "category": "cutlery",
+        "objects": ["fork", "knife", "knife block", "plate", "saucer", "spoon"]
+    },
+    {
+        "category": "decoration",
+        "objects": ["candle holder", "lantern", "picture frame", "plant", "plant container",
+                    "plant", "saucer", "string lights", "surface saver ring", "vase"]
+    },
+    {
+        "category": "medical",
+        "objects": ["antidepressant", "dietary supplement", "laxative",
+                    "medicine", "weight loss", "guide"]
+    },
+    {
+        "category": "packaged food",
+        "objects": ["butter dish", "cake mix", "cake pan", "candy", "candy bar", "cereal", "chocolate",
+                    "chocolate box", "chocolate milk pods", "chocolate powder", "coffee beans",
+                    "coffee pods", "condiment", "cracker box", "donut", "fondant", "fruit snack",
+                    "gelatin box", "heavy master chef can", "herring fillets", "master chef can",
+                    "mustard bottle", "peppermint", "pepsi can pack", "pet food supplement", "potted meat can",
+                    "pudding box", "salt shaker", "snack cake", "sparkling water", "sugar box", "sugar sprinkles",
+                    "tea can pack", "tea pods", "tomato soup can", "water bottle", "xylitol sweetener"]
+    },
+    {
+        "category": "sporting",
+        "objects": ["baseball", "dumbbell", "dumbbell rack", "golf ball",
+                    "mini soccer ball", "racquetball", "softball", "tennis ball"]
+    },
+    {
+        "category": "kitchen accessory",
+        "objects": ["can opener", "chopping board", "dish drainer", "honey dipper", "lime squeezer",
+                    "spoon rest", "sushi mat", "utensil holder"]
+    },
+    {
+        "category": "sanitary",
+        "objects": ["bath sheet", "bleach cleanser", "diaper pack", "dishtowel", "dustpan and brush",
+                    "electric toothbrush", "incontinence pads", "parchment sheet", "sanitary pads",
+                    "soap dish", "soap dispenser", "sponge", "sponge dish", "tampons", "toothbrush holder",
+                    "toothbrush pack", "towel", "washcloth", "wipe warmer"]
+    },
+    {
+        "category": "cosmetic",
+        "objects": ["beard color gel", "beauty pack", "face moisturizer", "hair color", "hair conditioner",
+                    "lipstick", "mascara", "skin care product", "skin moisturizer"]
+    },
+    {
+        "category": "crockery",
+        "objects": ["bowl", "cup", "dog bowl", "drink coaster", "mug", "stacking cups", "tray", "tumbler"]
+    },
+    {
+        "category": "electronic accessory",
+        "objects": ["battery", "electronic adapter", "electronic cable", "graphics card", "hard drive",
+                    "hard drive", "hard drive case", "headphones", "ink cartridge", "keyboard", "laptop cover",
+                    "laptop stand", "motherboard", "mouse", "mouse pad", "movie dvd", "multiport hub",
+                    "phone armband case", "phone stand", "remote control", "software cd", "tablet holder",
+                    "tablet stand", "usb drive", "wireless accessory"]
+    },
+    {
+        "category": "fruit",
+        "objects": ["apple", "banana", "lemon", "orange", "peach", "pear", "plum", "strawberry"]
+    },
+    {
+        "category": "furnishing",
+        "objects": ["cushion", "neck rest", "pillow"]
+    },
+    {
+        "category": "stationery",
+        "objects": ["book", "crayon", "file sorter", "folder", "invitation card", "labeling tape",
+                    "large marker", "letter holder", "paint bottle set", "paint maker", "pencil case"]
+    },
+    {
+        "category": "storage",
+        "objects": ["backpack", "bookend", "box", "canister", "carrying case", "cube storage box", "desk caddy",
+                    "easter basket", "jar", "jewelry box", "laundry box", "lunch bag", "lunch box", "paper bag",
+                    "shoe box", "snack dispenser", "storage bin", "waste basket"]
+    },
+    {
+        "category": "tool",
+        "objects": ["adjustable wrench", "anti slip tape", "chain", "clamp", "duct tape", "flat screwdriver",
+                    "hammer", "magnifying glass", "measuring tape", "padlock", "phillips screwdriver", "power drill",
+                    "scissors", "vinyl tape"]
+    },
+    {
+        "category": "toy",
+        "objects": ["action figure", "android figure", "balancing cactus", "board game", "card game", "clay",
+                    "colored wood blocks", "dog chew toy", "dollhouse toy", "fingerpaint", "foam brick", "hand bell", "jenga",
+                    "lego duplo", "nine hole peg test", "nintendo switch", "peg and hammer toy", "puzzle game", "rubiks cube",
+                    "sidewalk chalk", "sorting toy", "stuffed toy", "toy airplane", "toy animal", "toy basketball", "toy bowling set",
+                    "toy construction set", "toy fishing", "toy food", "toy furniture set", "toy instrument", "toy kitchen set",
+                    "toy tool kit", "toy vehicle", "video game", "whale whistle"]
+    }
+]

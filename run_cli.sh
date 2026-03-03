@@ -6,7 +6,8 @@ exp_id=$1
 tag=$2
 num_eps=$3
 # Set default value for debug if not provided
-debug=${4:-run}
+worker_id=${4:-0}
+debug=${5:-run}
 
 log_dir=logs/${exp_id}
 mkdir -p $log_dir/node_info
@@ -21,5 +22,6 @@ python -u cos_eor/trainer/hie_policy_runner.py \
     --exp-config $log_dir/configs/${tag}.yaml \
     --tag ${tag} \
     --out-dir $log_dir \
+    --worker-id $worker_id \
     $debug_flag \
-|& tee $log_dir/stdout-0-${tag}.log
+|& tee $log_dir/stdout-0-${tag}-w${worker_id}.log

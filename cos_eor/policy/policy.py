@@ -15,7 +15,7 @@ from habitat_baselines.rl.ddppo.policy.resnet_policy import ResNetEncoder
 from habitat_baselines.rl.models.rnn_state_encoder import RNNStateEncoder, RNNStateEncoderOld
 from habitat_baselines.rl.ppo import Net, Policy
 from torch import nn as nn
-from cos_eor.utils.objects_to_byte_tensor import dec_bytes2obj
+from codellmpersonalize.cos_eor.utils.objects_to_byte_tensor import dec_bytes2obj
 from habitat.core.registry import registry
 
 

@@ -9,7 +9,7 @@ from scipy.spatial.transform import Rotation as R
 SCENE_ID = "Rs_int" # 씬 이름
 
 # [중요] 도커 내부 경로로 설정
-BASE_DIR = "./data/scene_datasets/igibson"
+BASE_DIR = "/workspace/codellmpersonalize/data/scene_datasets/igibson"
 SCENE_GLB_PATH = os.path.join(BASE_DIR, "scenes", f"{SCENE_ID}.glb")
 
 # 가구 정보가 있는 메타데이터 (assets 폴더에 있음)
@@ -18,7 +18,7 @@ METADATA_PATH = os.path.join(BASE_DIR, "assets", f"{SCENE_ID}", "metadata_v2.yam
 # [핵심 변경] 실제 3D 모델(obj)이 들어있는 폴더 (assets_assemble)
 ASSEMBLE_DIR = os.path.join(BASE_DIR, "assets_assemble", f"{SCENE_ID}")
 
-OUTPUT_FILENAME = f"./visualize_scene/scenes/{SCENE_ID}_furnished.glb"
+OUTPUT_FILENAME = f"/workspace/codellmpersonalize/visualize_scene/scenes/{SCENE_ID}_furnished.glb"
 # ===========================================
 
 def load_scene_and_furniture_obj():

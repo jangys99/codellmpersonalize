@@ -5,7 +5,7 @@ from collections import defaultdict
 
 # ==========================================
 # [설정] 로그 파일이 있는 폴더 경로 (기존과 동일하게 수정해주세요)
-LOG_FOLDER = "/workspace/codellmpersonalize/logs/bt_7_p1_train_pair_test_v4/demo/pomaria_1_int"
+LOG_FOLDER = "/workspace/codellmpersonalize/logs/IL_scene3_v4_0.9_cp4_pair_eval/demo/pomaria_2_int"
 # ==========================================
 
 def get_task_signature(episode):
@@ -69,7 +69,7 @@ def check_repetitions():
     incorrect_counts = {sig: count for sig, count in task_counts.items() if count != 5}
     
     if not incorrect_counts:
-        print("\n✅ [SUCCESS] 완벽합니다! 125개 파일이 정확히 5회씩 반복되는 태스크로 구성되어 있습니다.")
+        print("\n✅ [SUCCESS] 완벽합니다! 파일이 정확히 5회씩 반복되는 태스크로 구성되어 있습니다.")
         if len(task_counts) == total_episodes / 5:
             print(f"   (총 {len(task_counts)}개의 고유 태스크 × 5회 반복 = {total_episodes} 에피소드)")
     else:

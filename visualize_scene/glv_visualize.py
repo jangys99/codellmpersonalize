@@ -27,5 +27,5 @@ def view_glb_trimesh(file_path):
         traceback.print_exc()
 
 # 실행 예시
-glb_path = "./visualize_scene/scenes/Rs_int_furnished.glb"
+glb_path = "/workspace/codellmpersonalize/visualize_scene/scenes/Pomaria_1_int_furnished.glb"
 view_glb_trimesh(glb_path)

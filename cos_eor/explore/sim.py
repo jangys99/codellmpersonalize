@@ -42,6 +42,7 @@ class ExploreSim(CosRearrangementSim):
         super().__init__(config)
         self.initialize_map(config)
 
+
     def initialize_map(self, config):
         r"""Initializes the map configurations and useful variables for map
         computation.
@@ -234,7 +235,7 @@ class ExploreSim(CosRearrangementSim):
         agent_state = self.get_agent_state()
         position_before_step = agent_state.position
         rotation_before_step = agent_state.rotation
-
+        
         # if action == self.index_stop_action:
         #     self._is_episode_active = False
         #     sim_obs = self._sim.get_sensor_observations()
@@ -879,6 +880,7 @@ class ExploreSim(CosRearrangementSim):
         Returns:
             sim_obs with occupancy maps added as keys to it.
         """
+        
         sensors = self._sensor_suite.sensors
         proc_rgb = sensors["rgb"].get_observation(sim_obs)
         proc_depth = sensors["depth"].get_observation(sim_obs)

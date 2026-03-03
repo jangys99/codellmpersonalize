@@ -9,6 +9,10 @@ import re
 import os
 import time
 import json
+import yaml
+import networkx as nx
+from lite_planner.src.lite_planner import LITEPlanner
+
 
 class PlanModule(ABC):
     def __init__(self, config, num_envs):
@@ -114,6 +118,12 @@ class PlanModule(ABC):
             high_level_prompt = ""
             high_level_text = ""
             low_level_text = self.response
+            high_level_step = ""
+        elif self.type == LITE:
+            low_level_prompt = self.lite_planner.text_scene_graph
+            high_level_prompt = ""
+            high_level_text = ""
+            low_level_text = str(self.current_generated_steps)
             high_level_step = ""
         elif self.type == ADAPTER:
             high_level_prompt = self.prompt[PLANNER]
@@ -1532,3 +1542,275 @@ class LLMModelLlama(LLMModel):
         generated_samples = [sample.strip().lower() for sample in generated_samples]
         self.response = list(sorted([{'sample': generated_samples[i], 'log_prob': mean_log_probs[i]} for i in range(len(generated_samples))], key=lambda x: x['log_prob'], reverse=True))
         return self.response
+    
+    
+class LITEPlanModule(PlanModule):
+    def __init__(self, config, num_envs, device):
+        super().__init__(config, num_envs)
+        self.type = LITE
+        self.name = self.config[NAME]
+        
+        api_key_path = '/workspace/codellmpersonalize/cos_eor/configs/local/api_key.yaml'
+        api_key = ''
+        organization = ''
+        
+        try:
+            with open(api_key_path, 'r') as file:
+                data = yaml.safe_load(file)
+                api_key = data.get("key", "")
+                organization = data.get("organization", "")
+        except FileNotFoundError:
+            print(f"Warning: API Key file not found at {api_key_path}")
+        
+        # yaml 설정 파일에 LITE 섹션을 추가
+        lite_config = self.config.get('lite', {})
+        self.llm_model = lite_config.get('model_name', '')
+        
+        self.lite_planner = LITEPlanner(
+            api_key=api_key,
+            organization=organization,
+            model_name=self.llm_model,
+            ours_mis_prompt_path=lite_config.get('ours_mis_prompt_path', ''),
+            ours_rec_prompt_path=lite_config.get('ours_rec_prompt_path', ''),
+            confidence_threshold=lite_config.get('confidence_threshold', 0.248),
+            visualize_flag=False,
+            visualize_debug_flag=False,
+            ppr_print_flag=False,
+            similarity_api='http://127.0.0.1:8000/similarity'
+        )
+
+        self.plan = LLMPlan()
+        self.current_misplaced_objects = []
+        self.processed_objects_in_episode = set()
+        
+        self.prompt_history = []
+        self.cur_step = 0
+        
+        self.prompt_prefix = 'step 1:'
+        self.explored_init = False
+        self.current_generated_steps = []
+        
+    def reset(self, key_translator=None, house_logger=None):
+        super().reset(key_translator, house_logger)
+        self.plan = LLMPlan()
+        self.current_misplaced_objects = []
+        self.processed_objects_in_episode = set()
+        self.prompt_history = []
+        self.cur_step = 0
+        
+        self.lite_planner.run_history = []
+        self.lite_planner.processed_objects = set()
+        self.lite_planner.misplaced_object_list = []
+        
+        self.explored_init = False
+        self.current_generated_steps = []
+        
+        self.lite_planner.llm_calls = 0
+        self.lite_planner.ppr_calls = 0
+        
+    def _convert_to_networkx(self, graph_obj):
+        G = nx.DiGraph()
+        root = "Home"
+        
+        virtual_room = 'virtual_room'
+        virtual_receptacle = 'virtual_receptacle'
+        virtual_object = 'virtual_object'
+        
+        G.add_edge(virtual_room, root)
+        G.add_edge(virtual_receptacle, virtual_room)
+        G.add_edge(virtual_object, virtual_receptacle)
+        
+        graph_data = graph_obj.graph
+        
+        for room_name, room_content in graph_data.items():
+            G.add_edge(room_name, root, weight=1.0)
+            
+            receptacles = room_content.get(REC, [])
+            for rec in receptacles:
+                G.add_edge(rec, room_name, weight=1.0)
+                
+            objects = room_content.get(OBJ, {})
+            for obj_name, obj_info in objects.items():
+                rec_name = obj_info.get(REC)
+                if rec_name:
+                    G.add_edge(obj_name, rec_name, weight=1.0)
+                    
+        return G
+    
+    def _build_exploration_prompt(self):
+        base_prompt = (
+            "There are objects misplaced on wrong receptacles and potentially in the wrong room. "
+            "context_placeholder. \n"
+            "Give me the next steps to explore the house and place misplaced objects on correct receptacles. "
+            "Use the following actions for each step and separate by new lines: option_placeholder. "
+            "prev_steps_msg. example_placeholder. "
+            "The next steps should only follow one of the above examples. "
+            "If a room is listed as having 'no receptacles found yet', you must generate a sequence to visit only those specific rooms. [DO NOT provide any 'reasoning'] Steps: "
+        )
+        
+        system_prompt = "You are a one-handed household robot."
+        
+        option_list = "go to room, go to object, go to receptacle, look at object, look at receptacle, pick up object, place object on receptacle."
+        
+        example_explore = (
+            # "\nExample steps to explore room living room 0:\nstep 1: go to living room 0\nExample steps to pick up saucer 1 and place on kitchen 0 counter 18:\nstep 1: go to saucer 1\nstep 2: look at saurcer 1\nstep 3: pick up saucer 1\nstep 4: go to kitchen 0 counter 18\nstep 5: look at kitchen 0 counter 18\nstep 6: place saurcer 1 on kitchen 0 counter 18\n."
+            "\nExample steps to explore room living room 0:\nstep 1: go to living room 0\nstep 2: go to kitchen 0\n step 3: go to corridor 0.."
+        )
+        
+        # 현재 컨텍스트 구성
+        current_context = "You are holding nothing."
+        if hasattr(self.lite_planner, 'text_scene_graph') and self.lite_planner.text_scene_graph:
+            current_context += f"\n{self.lite_planner.text_scene_graph}"
+        
+        # 플레이스홀더 치환
+        user_prompt = base_prompt.replace("context_placeholder", current_context) \
+                                 .replace("option_placeholder", option_list) \
+                                 .replace("prev_steps_msg", "") \
+                                 .replace("example_placeholder", example_explore)
+        
+        return {
+            USER: user_prompt,
+            SYSTEM: system_prompt,
+            PREFIX: self.prompt_prefix
+        }
+
+    def _process_explore_llm_response(self):
+        # LLM 응답 처리 (LLMPlanModule._process_llm_response_to_plan 참고)
+        top_nl_response = self.prompt_prefix + self.llm_model.get_top_nl_response()
+        print(f"--- Explore LLM Response: {top_nl_response} ---")
+        
+        top_nl_response = top_nl_response.lower().replace(' :', ":")
+        
+        # 스텝 파싱
+        pattern = r"\n|step \d+\:|step\d+\:"
+        steps = [s.strip().strip('.').strip(',') for s in re.split(pattern, top_nl_response)]
+        steps = [s for s in steps if len(s) > 0]
+        
+        # 계획에 추가
+        self.plan.add_steps(steps)
+    
+    def _llm_execution(self, model, messages, temperature=0.1, max_tokens=4096):
+        parameter = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+            
+        try:
+            response = openai.ChatCompletion.create(**parameter)
+            return response.choices[0].message.content
+        except Exception as e:
+            print(f"LLM Call Error: {e}")
+            return ""
+    
+    def _generate_plan(self, info=None):
+        current_graph = self._convert_to_networkx(info[GRAPH])
+        self.lite_planner.set_graph(current_graph)
+        
+        if self.cur_step < len(self.plan.content):
+             return None
+         
+        if not self.explored_init:
+            prompt_dict = self._build_exploration_prompt()
+                
+            # 2-2. 메시지 구성
+            messages = [
+                {"role": "system", "content": prompt_dict[SYSTEM]},
+                {"role": "user", "content": prompt_dict[USER] + "\n" + prompt_dict[PREFIX]}
+            ]
+            
+            response_text = self._llm_execution(
+                    model=self.llm_model,
+                    messages=messages,
+                    temperature=0.1,
+                    max_tokens=4096
+                )
+            print(f"--- Explore LLM Response: {response_text} ---")
+            
+            # 2-4. 응답 파싱 및 계획 추가
+            # response_text = response_text.lower().replace(' :', ":")
+            # pattern = r"\n|step \d+\:|step\d+\:"
+            # steps = [s.strip().strip('.').strip(',') for s in re.split(pattern, response_text)]
+            # steps = [s for s in steps if len(s) > 0]
+            text = re.sub(r'step\s*\d+\s*[:.]\s*', '', response_text, flags=re.IGNORECASE)
+    
+            # 2. 줄 단위로 나누고, 의미 있는 행동(go to, pick up, place)만 필터링
+            lines = [line.strip() for line in text.split('\n') if line.strip()]
+            
+            steps = []
+            for line in lines:
+                # "go to", "pick up", "place", "look at" 등으로 시작하는 줄만 추출
+                if re.match(r'^(go to|pick up|place|look at)', line, re.IGNORECASE):
+                    steps.append(line)
+            
+            self.plan.add_steps(steps)
+            self.current_generated_steps = steps
+            self.explored_init = True
+            return 'new_plan'
+            
+        if not self.current_misplaced_objects:
+            print('[LITEPlanner] Detecting misplaced objects')
+            detected_objects = self.lite_planner.misplaced_object_detect()
+            
+            self.current_misplaced_objects = [
+                obj for obj in detected_objects
+                # if obj not in self.processed_objects_in_episode
+            ]
+            print(f'[LITEPlanner] Detected misplaced objects: {self.current_misplaced_objects}')
+            
+        if not self.current_misplaced_objects:
+            print('[LITEPlanner] No more object to move. Mission complete.')
+            self.plan.add_step('mission complete')
+            self.current_generated_steps = ['mission complete']
+            return 'new_plan'
+        
+        
+        target_object = self.current_misplaced_objects.pop(0)
+        self.processed_objects_in_episode.add(target_object)
+        
+        print(f'[LITEPlanner] Planning rearrange for: {target_object}')
+        
+        self.lite_planner.rearrange(target_object)
+        correct_receptacle = self.lite_planner.correct_receptacle
+        
+        print(f'[LITEPlanner] Decision: Move {target_object} to {correct_receptacle}')
+        
+        steps = [
+            f"go to {target_object}",
+            f"look at {target_object}",
+            f"pick up {target_object}",
+            f"go to {correct_receptacle}",
+            f"look at {correct_receptacle}",
+            f"place {target_object} on {correct_receptacle}"
+        ]
+        
+        self.plan.add_steps(steps)
+        self.current_generated_steps = steps
+        return 'new_plan'
+    
+    def prompt_and_plan(self, prompt, info=None):
+        result = self._generate_plan(info=info)
+        if result == 'new_plan':
+            self.log_prompt_and_response()
+        # self._generate_plan(info=info)
+        # self.log_prompt_and_response()
+        
+    def get_next_step_and_increase_counter(self, nl_context=None, info=None):
+        # 현재 스텝 가져오기 (self.cur_step 초기화 필요)
+        if not hasattr(self, 'cur_step'):
+            self.cur_step = 0
+            
+        step = self.plan.get_step(self.cur_step)
+        
+        if step is not None:
+            self.cur_step += 1
+            return step
+        else:
+            # 스텝이 없으면 새로 계획 생성 시도
+            self.prompt_and_plan(nl_context, info=info)
+            step = self.plan.get_step(self.cur_step)
+            if step:
+                self.cur_step += 1
+                return step
+            return None

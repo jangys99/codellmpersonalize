@@ -380,10 +380,13 @@ class CosRearrangementSim(HabitatSim):
         if urdf_dir == None:
             urdf_dir = os.path.dirname(metadata_file)
 
+        
         with open(metadata_file) as f:
             full_metadata = yaml.load(f)
             if "urdfs" in full_metadata:
                 metadata = full_metadata["urdfs"]
+                # import pdb
+                # pdb.set_trace()
             else:
                 raise ValueError
 
@@ -543,8 +546,16 @@ class CosRearrangementSim(HabitatSim):
         prim_ids = []
         debug_count = 0
 
-        if navmesh_file is None:
-            navmesh_file = self.habitat_config.NAVMESH.format(scene=scene_name, num_objs=len(episode.recs_keys))
+        # 수정
+        # if navmesh_file is None:
+            # navmesh_file = self.habitat_config.NAVMESH.format(scene=scene_name, num_objs=len(episode.recs_keys))
+
+        if episode is not None:
+            num_objs = len(episode.recs_keys)
+        else:
+            num_objs = 0
+        navmesh_file = self.habitat_config.NAVMESH.format(scene=scene_name, num_objs=num_objs)
+
         add_prims = not os.path.exists(navmesh_file) or True
         meta_keys = list(metadata.keys())
 

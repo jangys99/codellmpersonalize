@@ -289,6 +289,8 @@ class CosRearrangementRLEnv(NavRLEnv):
         objs_success = []
         obj_to_goal = self._env.get_metrics()["object_to_goal_distance"]
         for ok in obj_keys:
+            if ok not in obj_to_goal: 
+                continue
             current_rec = obj_to_goal[ok]["current_rec"]
             correct_recs = obj_to_goal[ok]["recs_keys"]
             if current_rec in correct_recs:

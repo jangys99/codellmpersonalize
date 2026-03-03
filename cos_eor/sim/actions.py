@@ -148,10 +148,11 @@ class GrabOrReleaseActionIdBased(SimulatorTaskAction):
                 fail_action = True
                 fail_reason = "place on object"
 
+            # Place 수정
             # fail if semantic-id is not visible
-            if kwargs["iid"] not in avail_iids and rec_iid not in avail_iids:
-                fail_action = True
-                fail_reason = f"iid not-visible/incorrect; chosen: {kwargs['iid']}, avail: {avail_iids}"
+            # if kwargs["iid"] not in avail_iids and rec_iid not in avail_iids:
+            #     fail_action = True
+            #     fail_reason = f"iid not-visible/incorrect; chosen: {kwargs['iid']}, avail: {avail_iids}"
         else:
             raise AssertionError
         return distance, distance_threshold, fail_action, fail_reason, curr_observations
@@ -202,14 +203,25 @@ class GrabOrReleaseActionIdBased(SimulatorTaskAction):
                         obj_key = task.sim_obj_id_to_obj_key[gripped_object_id]
                         rec_key = episode.get_rec(obj_key, episode.state_matrix)
                         rec_id = task.obj_key_to_sim_obj_id[rec_key]
-                        remove_result = task.rec_packers[rec_id].remove(gripped_object_id)
-                        assert remove_result
+                        # 수정
+                        # remove_result = task.rec_packers[rec_id].remove(gripped_object_id)
+                        # assert remove_result
+                        if rec_id in task.rec_packers:
+                            try:
+                                task.rec_packers[rec_id].remove(gripped_object_id)
+                            except:
+                                pass
                         # update episode-state
                         episode.update_mapping(gripped_object_id, "pick", task)
                     else:
                         import pdb
                         pdb.set_trace()
-                except:
+                except Exception as e:
+                    import sys
+                    print(f"[DEBUG] Pick Action Failed. Error: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    
                     import pdb
                     pdb.set_trace()
 

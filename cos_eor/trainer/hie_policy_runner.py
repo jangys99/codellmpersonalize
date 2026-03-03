@@ -10,6 +10,7 @@ import numpy as np
 import numba
 import torch
 import tqdm
+import itertools
 
 cwd = os.getcwd()
 pwd = os.path.dirname(cwd)
@@ -29,7 +30,7 @@ from cos_eor.policy.rank import RankModule
 from cos_eor.policy.nav import NavModule
 from cos_eor.policy.oracle_rank import OracleRankModule
 from cos_eor.policy.explore import ExploreModule
-from cos_eor.policy.llm_planner import DummyPlanModule, LLMPlanModule, LLMPlanAdapterModule, LLMSayPlanModule, LLMSayCanModule
+from cos_eor.policy.llm_planner import DummyPlanModule, LLMPlanModule, LLMPlanAdapterModule, LLMSayPlanModule, LLMSayCanModule, LITEPlanModule
 from cos_eor.policy.hie_policy import HiePolicy
 from cos_eor.env.env import CosRearrangementRLEnv
 from cos_eor.task.sensors import *
@@ -73,6 +74,8 @@ class HiePolicyRunner(object):
             self.plan_module = LLMSayPlanModule(self.config.RL.POLICY.plan, self.envs.num_envs, self.device)
         elif self.config.RL.POLICY.plan.name == SAYCAN:
             self.plan_module = LLMSayCanModule(self.config.RL.POLICY.plan, self.envs.num_envs, self.device)
+        elif self.config.RL.POLICY.plan.name == LITE:
+            self.plan_module = LITEPlanModule(self.config.RL.POLICY.plan, self.envs.num_envs, self.device)
         else:
             self.plan_module = DummyPlanModule(self.config.RL.POLICY.plan, self.envs.num_envs, self.device)
 
@@ -187,8 +190,9 @@ class HiePolicyRunner(object):
                 pass
         # Don't count header
         return i
-
-    def run(self, out_dir=None, resume=False, tag=None, num_eps=1000):
+        
+        
+    def run(self, out_dir=None, resume=False, tag=None, num_eps=1000, worker_id=0):
         self.config.defrost()
 
         # navmesh_file = out_dir/self.config.TASK_CONFIG.SIMULATOR.NAVMESH
@@ -210,7 +214,66 @@ class HiePolicyRunner(object):
         self.envs = construct_envs(
             self.config, get_env_class(self.config.ENV_NAME)
         )
+        
+        # OriginalEnvClass = get_env_class(self.config.ENV_NAME)
+        
+        # class RandomSamplingEnv(OriginalEnvClass):
+        #     def __init__(self, *args, **kwargs):
+        #         super().__init__(*args, **kwargs)
+        #         self._data_configured = False
 
+        #     def reset(self):
+        #         # 최초 1회만 데이터셋을 변형합니다.
+        #         if not self._data_configured:
+        #             if hasattr(self, 'habitat_env'):
+        #                 env = self.habitat_env
+                        
+        #                 # 1. 데이터셋 접근
+        #                 dataset = None
+        #                 if hasattr(env, '_dataset'): dataset = env._dataset
+        #                 elif hasattr(env, 'dataset'): dataset = env.dataset
+                        
+        #                 if dataset and hasattr(dataset, 'episodes'):
+        #                     all_episodes = dataset.episodes
+        #                     total_len = len(all_episodes)
+                            
+        #                     # 2. 순차 추출 (수정됨)
+        #                     # 랜덤 시드와 샘플링 로직을 제거하고 슬라이싱으로 변경했습니다.
+        #                     sample_size = 10
+                            
+        #                     if total_len >= sample_size:
+        #                         # 처음부터 sample_size 개수만큼 순서대로 자릅니다.
+        #                         sampled_episodes = all_episodes[:sample_size]
+        #                     else:
+        #                         sampled_episodes = all_episodes # 개수가 부족하면 전체 사용
+                            
+        #                     # 3. 5회 반복 복제 (Expansion)
+        #                     # [Ep0, Ep1, ... Ep9] -> [Ep0...Ep9, Ep0...Ep9, ... ] (총 50개)
+        #                     expanded_episodes = sampled_episodes * 5
+                            
+        #                     # 4. 데이터셋 덮어쓰기
+        #                     dataset.episodes = expanded_episodes
+                            
+        #                     # 5. 실행 환경(HabitatEnv) 동기화
+        #                     if hasattr(env, 'episodes'):
+        #                         env.episodes = expanded_episodes
+                            
+        #                     # 6. 반복자(Iterator) 초기화 (필수)
+        #                     if hasattr(env, '_episode_iterator'):
+        #                         env._episode_iterator = itertools.cycle(expanded_episodes)
+                                
+        #                     print(f"✅ [SequentialSampling] First {len(sampled_episodes)} tasks selected.")
+        #                     print(f"   - Total episodes after expansion: {len(expanded_episodes)}")
+                            
+        #             self._data_configured = True
+                
+        #         return super().reset()
+            
+        # # 1. 수정된 환경 클래스로 생성 (함수 주입 X)
+        # self.envs = construct_envs(
+        #     self.config, RandomSamplingEnv
+        # )
+            
         self.device = (
             torch.device("cuda", self.config.TORCH_GPU_ID)
             if torch.cuda.is_available()
@@ -298,7 +361,8 @@ class HiePolicyRunner(object):
                     now = datetime.datetime.now()
                     filename_time = now.strftime("%Y-%m-%d_%H-%M-%S")
                     file_extension = ".json"  # or ".jsonl" for JSON Lines
-                    filename = f"data_{filename_time}{file_extension}"
+                    # filename = f"data_{filename_time}{file_extension}"
+                    filename = f"data_w{worker_id}_{filename_time}{file_extension}"
                     house_logger_filepath = demonstration_dir/filename
                     house_logger_filepath.parent.mkdir(exist_ok=True, parents=True)
                     self.policy.write_house_logs_to_file(house_logger_filepath)
@@ -346,7 +410,9 @@ def run_exp(exp_config: str, out_dir: Path, resume: bool, opts=None, **kwargs):
 
     out_dir.mkdir(parents=True, exist_ok=True)
     runner = HiePolicyRunner(config)
-    runner.run(out_dir=out_dir, resume=resume, tag=kwargs["tag"], num_eps=kwargs["num_eps"])
+    # runner.run(out_dir=out_dir, resume=resume, tag=kwargs["tag"], num_eps=kwargs["num_eps"])
+    worker_id = kwargs.get("worker_id", 0)
+    runner.run(out_dir=out_dir, resume=resume, tag=kwargs["tag"], num_eps=kwargs["num_eps"], worker_id=worker_id)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -354,19 +420,19 @@ def main():
     parser.add_argument(
         "--exp-config",
         type=str,
-        default='/workspace/codellmpersonalize/logs/bt_7_p1_train_pair_test_v4/configs/pomaria_1_int.yaml',
+        default='/workspace/codellmpersonalize/logs/ours_scene2_pair_eval/configs/merom_1_int.yaml',
         # required=True,
         help="path to config yaml containing info about experiment",
     )
     parser.add_argument(
         "--out-dir",
-        default='/workspace/codellmpersonalize/logs/bt_7_p1_train_pair_test_v4',
+        default='/workspace/codellmpersonalize/logs/ours_scene2_pair_eval',
         type=Path,
         help="output directory"
     )
     parser.add_argument(
         "--num-eps",
-        default=11,
+        default=1,
         type=int,
         # required=True,
         help="number of episodes"
@@ -385,7 +451,7 @@ def main():
     )
     parser.add_argument(
         "--tag",
-        default='pomaria_1_int',
+        default='merom_1_int',
         # required=True,
         type=str,
         help="experiment-tag"
@@ -407,6 +473,12 @@ def main():
         default=False,
         action='store_true',
         help="Run in debug mode and wait for debugger to attach."
+    )
+    parser.add_argument(
+        "--worker-id",
+        type=int,
+        default=0,
+        help="worker id for parallel execution"
     )
 
     args = parser.parse_args()

@@ -539,8 +539,16 @@ class ShelfBinPacker(object):
         # build shelves
         self.shelves = [Shelf.from_dict(shelf_state) for shelf_state in state["shelves"]]
 
-        # build matches
+        # build matches 추가 수정
         self.matches = [Match.from_dict(match_state, key_to_id) for match_state in state["matches"]]
+        # self.matches = []
+        # for match_state in state["matches"]:
+        #     # [수정] 시뮬레이션에 로드되지 않은 오브젝트(key_to_id에 없는 경우)는 건너뜀
+        #     if key_to_id is not None and match_state["rect"]["id"] not in key_to_id:
+        #         # print(f"[Warning] Skipping missing object in packer: {match_state['rect']['id']}")
+        #         continue
+        #     self.matches.append(Match.from_dict(match_state, key_to_id))
+            
         self.matches = {match.rect.id:match for match in self.matches}
 
         # build range

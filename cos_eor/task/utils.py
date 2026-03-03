@@ -76,6 +76,26 @@ def merge_sim_episode_with_object_config(sim_config, episode):
     return sim_config
 
 
+# def get_packer_mapping(packers, task):
+#     packer_mapping = {}
+#     # 추가 수정
+#     for rec_id, packer in packers.items():
+#         obj_keys = [
+#             task.sim_obj_id_to_obj_key[obj_key] 
+#             for obj_key in list(packer.matches.keys()) 
+#             if obj_key in task.sim_obj_id_to_obj_key
+#         ]
+        
+#         # rec_id도 존재하는지 확인 (안전장치)
+#         if rec_id not in task.sim_obj_id_to_obj_key:
+#             continue
+        
+#         rec_key = task.sim_obj_id_to_obj_key[rec_id]
+        
+#         for obj_key in obj_keys:
+#             packer_mapping[obj_key] = rec_key
+#     return packer_mapping
+
 def get_packer_mapping(packers, task):
     packer_mapping = {}
     for rec_id, packer in packers.items():
